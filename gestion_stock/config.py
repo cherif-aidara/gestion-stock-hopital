@@ -4,20 +4,32 @@
 class AppConfig:
     """Constantes et chemins de l'application."""
 
+    # Niveau de service visé pour le calcul du stock de sécurité
+    # -> z = 1.65 correspond à ~95% de niveau de service (loi normale)
+    # Utilisé dans InventoryAnalytics._calculer_stats_produits
     Z_NIVEAU_SERVICE = 1.65  # niveau de service visé ~95%
 
+    # Chemins vers les fichiers sources de données (relatifs à la racine du projet)
     CHEMIN_REQUISITIONS = "data/requisitions_echantillon.csv"
     CHEMIN_RECEPTIONS = "data/receptions_echantillon.csv"
 
+    # Noms exacts des colonnes de quantité dans les fichiers sources
+    # -> centralisés ici pour éviter de répéter/désynchroniser ces chaînes
+    # dans tout le code (ChartBuilder, InventoryAnalytics, etc.)
     COLONNE_QTE_REQUISITION = "Ligne réquisition - Qté"
     COLONNE_QTE_RECEPTION = "Ligne réception - Qté reçue"
 
+    # Graines aléatoires fixes pour les simulations (stock actuel, péremption)
+    # -> garantit des résultats reproductibles à chaque exécution
     GRAINES_ALEATOIRES = {"stock": 42, "peremption": 7}
 
+    # Textes d'identité de l'application, utilisés dans le logo/sidebar
     TITRE = "Stock Hospitalier"
     SOUS_TITRE = "Entrepôt & Approvisionnement"
     NOM_ORGANISATION = "Centre hospitalier"
 
+    # Mapping {nom technique de colonne -> libellé affiché}
+    # -> pilote les en-têtes du RiskTable (dash_table.DataTable)
     NOMS_COLONNES_AFFICHEES = {
         "Produit": "Produit",
         "demande_moyenne": "Demande moy./jour",
@@ -30,6 +42,8 @@ class AppConfig:
         "zone_suggeree": "Zone suggérée",
     }
 
+    # Couleurs d'accent + fond pour chaque carte KPI de la page Vue d'ensemble
+    # (clé = type de KPI, utilisé par KPIComponent)
     THEME_KPI = {
         "total": {"accent": "#0EA5E9", "fond": "#E0F2FE"},
         "rupture": {"accent": "#EF4444", "fond": "#FEE2E2"},
@@ -37,6 +51,8 @@ class AppConfig:
         "zone_a": {"accent": "#10B981", "fond": "#D1FAE5"},
     }
 
+    # Palette commune utilisée par ChartBuilder pour styliser tous les graphiques
+    # Plotly (texte, grille, et couleurs des séries demande/réception)
     THEME_GRAPHIQUES = {
         "texte": "#0F172A",
         "grille": "#E2E8F0",
@@ -44,6 +60,8 @@ class AppConfig:
         "reception": "#10B981",
     }
 
+    # Palette dédiée au tableau des risques (RiskTable) :
+    # couleurs d'en-tête, bordures, lignes alternées, et styles danger/succès
     THEME_TABLEAU = {
         "texte": "#0F172A",
         "entete_fond": "#F8FAFC",
@@ -57,6 +75,9 @@ class AppConfig:
         "success_texte": "#047857",
     }
 
+    # Définition centralisée des 3 pages du dashboard : route -> métadonnées
+    # -> utilisé à la fois par SidebarComponent (liens de nav), StockDashboardApp
+    # (routage/callback de navigation) et DashboardLayout (structure des pages)
     PAGES = {
         "/": {
             "id": "overview",
@@ -78,4 +99,6 @@ class AppConfig:
         },
     }
 
+    # Route de repli si l'URL ne correspond à aucune page connue
+    # (utilisée par StockDashboardApp._resoudre_pathname)
     PAGE_DEFAUT = "/"

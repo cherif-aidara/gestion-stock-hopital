@@ -7,12 +7,14 @@ from gestion_stock.config import AppConfig
 
 
 class RiskTable:
-    """Affiche le tableau interactif des risques par produit."""
+    """ Affiche le tableau interactif des risques par produit."""
 
     def __init__(self, config: AppConfig | None = None):
         self.config = config or AppConfig()
+        # Thème couleurs/styles spécifique aux tableaux (distinct du thème des graphiques)
         theme = self.config.THEME_TABLEAU
 
+        # Styles réutilisés pour surligner les cellules selon le niveau de risque
         self.STYLE_RISQUE_ELEVE = {
             "backgroundColor": theme["danger_fond"],
             "color": theme["danger_texte"],
@@ -27,12 +29,17 @@ class RiskTable:
         }
 
     def _colonnes(self) -> list[dict]:
+        # Construit la liste des colonnes du DataTable à partir du mapping
+        # {id_colonne: nom_affiché} défini dans la config
+        # -> permet de renommer/réordonner les colonnes affichées sans toucher aux données brutes
         return [
             {"name": self.config.NOMS_COLONNES_AFFICHEES[col], "id": col}
             for col in self.config.NOMS_COLONNES_AFFICHEES
         ]
 
     def _styles_conditionnels(self) -> list[dict]:
+        # Règles de style conditionnel du DataTable (style_data_conditional) :
+        # applique un fond coloré selon le niveau de risque, colonne par colonne
         return [
             {
                 "if": {
@@ -62,6 +69,7 @@ class RiskTable:
                 },
                 **self.STYLE_RISQUE_FAIBLE,
             },
+            # Alternance de couleur de fond une ligne sur deux, pour la lisibilité
             {
                 "if": {"row_index": "odd"},
                 "backgroundColor": self.config.THEME_TABLEAU["ligne_alternee"],
@@ -79,13 +87,14 @@ class RiskTable:
                 dash_table.DataTable(
                     id="tableau-risques",
                     columns=self._colonnes(),
+                    # Conversion du DataFrame en liste de dicts, format attendu par DataTable
                     data=stats_produits.to_dict("records"),
-                    page_size=10,
-                    sort_action="native",
-                    filter_action="native",
+                    page_size=10,           # Pagination : 10 lignes par page
+                    sort_action="native",   # Tri géré côté client par Dash (pas de callback custom)
+                    filter_action="native", # Filtrage géré côté client par Dash
                     style_cell={
                         "textAlign": "left",
-                        "whiteSpace": "normal",
+                        "whiteSpace": "normal",  # Permet le retour à la ligne dans les cellules
                         "height": "auto",
                         "fontFamily": "Inter, Segoe UI, sans-serif",
                         "fontSize": "13px",
@@ -104,11 +113,12 @@ class RiskTable:
                         "borderBottom": f"2px solid {theme['entete_bordure']}",
                     },
                     style_table={
-                        "overflowX": "auto",
+                        "overflowX": "auto",   # Défilement horizontal si le tableau est trop large
                         "borderRadius": "8px",
                         "border": f"1px solid {theme['bordure']}",
                     },
                     style_data={"border": "none"},
+                    # Applique le surlignage par niveau de risque + l'alternance de lignes
                     style_data_conditional=self._styles_conditionnels(),
                 ),
             ]

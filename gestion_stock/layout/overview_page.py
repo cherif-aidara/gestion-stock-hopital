@@ -24,11 +24,15 @@ class OverviewPage:
 
     @staticmethod
     def _fmt(n: int | float) -> str:
+        # Formate un nombre avec espace comme séparateur de milliers (format FR/QC)
+        # -> 1 décimale pour les floats, aucune décimale pour les entiers
         if isinstance(n, float):
             return f"{n:,.1f}".replace(",", " ")
         return f"{n:,}".replace(",", " ")
 
     def _bandeau_resume(self, resume: dict) -> html.Div:
+        # Bandeau en haut de page : période analysée + série de mini-statistiques
+        # globales (consommation, réquisitions, réceptions, stock, couverture, délai)
         return html.Div(
             [
                 html.Div(
@@ -47,6 +51,8 @@ class OverviewPage:
                         self._mini_stat("Réquisitions", self._fmt(resume["nb_requisitions"]), "lignes"),
                         self._mini_stat("Réceptions", self._fmt(resume["nb_receptions"]), "lignes"),
                         self._mini_stat("Stock simulé", self._fmt(resume["stock_total_simule"]), "unités"),
+                        # Ces deux valeurs sont déjà formatées côté analytics (pas de virgule à gérer)
+                        # -> converties directement en str, sans passer par _fmt
                         self._mini_stat("Couverture moy.", str(resume["jours_couverture_moy"]), "jours"),
                         self._mini_stat("Délai réappro moy.", str(resume["delai_reappro_moy"]), "jours"),
                     ],
@@ -58,6 +64,7 @@ class OverviewPage:
 
     @staticmethod
     def _mini_stat(label: str, valeur: str, unite: str) -> html.Div:
+        # Bloc compact réutilisable : libellé + valeur + unité
         return html.Div(
             [
                 html.Span(label, className="app-mini-stat-label"),
@@ -68,6 +75,8 @@ class OverviewPage:
         )
 
     def _cartes_risque(self, resume: dict) -> html.Div:
+        # Deux cartes mettant en avant les taux globaux de risque
+        # (rupture en rouge/"danger", péremption en orange/"warning")
         return html.Div(
             [
                 html.Div(
@@ -91,6 +100,8 @@ class OverviewPage:
         )
 
     def _liste_alertes(self, alertes) -> html.Div:
+        # Liste des produits en alerte de rupture (issue d'un DataFrame)
+        # -> état vide si aucune alerte, sinon un item par produit à risque
         if alertes.empty:
             return html.P("Aucune alerte de rupture active.", className="app-empty-state")
 
@@ -102,6 +113,10 @@ class OverviewPage:
                         html.Div(
                             [
                                 html.Span(row["nom_court"], className="app-alert-name"),
+                                # Détail combiné : jours de couverture restants,
+                                # stock actuel simulé et seuil (point de commande)
+                                # Note : le formatage ",".replace n'agit que sur le seuil
+                                # (dernier f-string évalué avant le .replace global de la ligne)
                                 html.Span(
                                     f"Couverture : {row['jours_couverture_stock']} j · "
                                     f"Stock : {int(row['stock_actuel_simule']):,} / "
@@ -119,11 +134,14 @@ class OverviewPage:
         return html.Div(items, className="app-alert-list")
 
     def construire(self) -> html.Div:
+        # Récupération de toutes les données nécessaires à la page
+        # via le service d'analytics (KPIs, résumé, alertes, top produits)
         kpis = self.analytics.obtenir_kpis()
         resume = self.analytics.obtenir_resume_vue_ensemble()
         alertes = self.analytics.obtenir_alertes_rupture()
         top_produits = self.analytics.obtenir_top_produits_consommation()
 
+        # Construction des 4 graphiques affichés sur la page
         fig_velocite = self.chart_builder.creer_donut_velocite(
             self.analytics.obtenir_repartition_velocite()
         )
@@ -137,9 +155,13 @@ class OverviewPage:
 
         return html.Div(
             [
+                # 1. Bandeau résumé (période + mini-stats)
                 self._bandeau_resume(resume),
+                # 2. Rangée de KPIs principaux (composant externe dédié)
                 KPIComponent.creer_rangée(kpis, self.config.THEME_KPI),
+                # 3. Cartes de taux de risque globaux
                 self._cartes_risque(resume),
+                # 4. Graphique pleine largeur : tendance de consommation globale
                 html.Div(
                     [
                         html.Div(
@@ -157,6 +179,7 @@ class OverviewPage:
                     ],
                     className="app-overview-row-full",
                 ),
+                # 5. Grille de 3 graphiques côte à côte : vélocité, zones, top produits
                 html.Div(
                     [
                         html.Div(
@@ -195,6 +218,7 @@ class OverviewPage:
                     ],
                     className="app-overview-grid-3",
                 ),
+                # 6. Liste détaillée des alertes de rupture, en bas de page
                 CardComponent.construire(
                     self._liste_alertes(alertes),
                     titre="Alertes rupture de stock",

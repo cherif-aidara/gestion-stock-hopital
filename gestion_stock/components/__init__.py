@@ -7,6 +7,9 @@ from gestion_stock.components.product_stats import ProductStatsComponent
 from gestion_stock.components.sidebar import SidebarComponent
 from gestion_stock.components.tables import RiskTable
 
+# Liste explicite des symboles exportés par le package
+# -> définit ce qui est accessible via "from gestion_stock.components import *"
+# -> sert aussi de documentation rapide sur l'API publique du module
 __all__ = [
     "CardComponent",
     "ChartBuilder",
